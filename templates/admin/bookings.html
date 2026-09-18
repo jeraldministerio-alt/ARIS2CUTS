@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}All Bookings{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>All Bookings</h1>
+    <p>View and manage every appointment in the system.</p>
+  </div>
+</div>
+
+<div class="card">
+  {% if bookings %}
+  <table>
+    <thead>
+      <tr><th>#</th><th>Customer</th><th>Barber</th><th>Service</th><th>Date</th><th>Time</th><th>Suggestion</th><th>Status</th><th>Actions</th></tr>
+    </thead>
+    <tbody>
+      {% for item in bookings %}
+      {% set b = item.booking %}
+      <tr>
+        <td>{{ b.booking_id }}</td>
+        <td>{{ item.customer_name }}</td>
+        <td>{{ item.barber_name }}</td>
+        <td>{{ item.service_name }} (₱{{ '%.2f'|format(item.service_price) }})</td>
+        <td>{{ b.date_str }}</td>
+        <td>{{ b.time_str }}</td>
+        <td style="max-width:180px;">
+          {% if item.note %}<span title="{{ item.note }}">💬 {{ item.note }}</span>{% else %}<span class="muted">—</span>{% endif %}
+        </td>
+        <td><span class="badge badge-{{ b.status|lower }}">{{ b.status }}</span></td>
+        <td>
+          <div class="row-actions">
+            <form method="POST" action="{{ url_for('admin.update_booking', booking_id=b.booking_id) }}" class="inline-form">
+              <select name="status" onchange="this.form.submit()">
+                <option value="Pending" {% if b.status=='Pending' %}selected{% endif %}>Pending</option>
+                <option value="Confirmed" {% if b.status=='Confirmed' %}selected{% endif %}>Confirmed</option>
+                <option value="Completed" {% if b.status=='Completed' %}selected{% endif %}>Completed</option>
+                <option value="Cancelled" {% if b.status=='Cancelled' %}selected{% endif %}>Cancelled</option>
+              </select>
+            </form>
+            <form method="POST" action="{{ url_for('admin.delete_booking', booking_id=b.booking_id) }}" class="inline-form" onsubmit="return confirm('Delete this booking?');">
+              <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty-state">No bookings yet.</div>
+  {% endif %}
+</div>
+{% endblock %}

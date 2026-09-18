@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}My Bookings - Barber{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>My Bookings</h1>
+    <p>Welcome, {{ session.get('full_name') }}. Here are appointments assigned to you.</p>
+  </div>
+</div>
+
+<div class="stat-grid">
+  <div class="stat-card"><div class="num">{{ pending_count }}</div><div class="label">Pending</div></div>
+  <div class="stat-card"><div class="num">{{ confirmed_count }}</div><div class="label">Confirmed</div></div>
+  <div class="stat-card"><div class="num">{{ completed_count }}</div><div class="label">Completed</div></div>
+  <div class="stat-card">
+    <div class="num">{% if average_rating %}{{ average_rating }}/10{% else %}—{% endif %}</div>
+    <div class="label">Avg Rating{% if rating_count %} ({{ rating_count }} review{{ 's' if rating_count != 1 else '' }}){% endif %}</div>
+  </div>
+</div>
+
+<div class="card">
+  {% if bookings %}
+  <table>
+    <thead>
+      <tr><th>#</th><th>Customer</th><th>Phone</th><th>Service</th><th>Date</th><th>Time</th><th>Suggestion</th><th>Status</th><th>Rating</th><th>Update</th></tr>
+    </thead>
+    <tbody>
+      {% for item in bookings %}
+      {% set b = item.booking %}
+      <tr>
+        <td>{{ b.booking_id }}</td>
+        <td>{{ item.customer_name }}</td>
+        <td>{{ item.customer_phone or '—' }}</td>
+        <td>{{ item.service_name }}</td>
+        <td>{{ b.date_str }}</td>
+        <td>{{ b.time_str }}</td>
+        <td style="max-width:200px;">
+          {% if item.note %}
+            <span title="{{ item.note }}">💬 {{ item.note }}</span>
+          {% else %}
+            <span class="muted">—</span>
+          {% endif %}
+        </td>
+        <td><span class="badge badge-{{ b.status|lower }}">{{ b.status }}</span></td>
+        <td>
+          {% if b.rating %}
+            <span class="badge badge-completed">{{ b.rating }}/10</span>
+          {% elif b.status == 'Completed' %}
+            <span class="muted">Awaiting rating</span>
+          {% else %}
+            <span class="muted">—</span>
+          {% endif %}
+        </td>
+        <td>
+          <form method="POST" action="{{ url_for('barber.update_booking', booking_id=b.booking_id) }}" class="inline-form">
+            <select name="status" onchange="this.form.submit()" {% if b.status == 'Cancelled' %}disabled{% endif %}>
+              <option value="Pending" {% if b.status=='Pending' %}selected{% endif %}>Pending</option>
+              <option value="Confirmed" {% if b.status=='Confirmed' %}selected{% endif %}>Confirmed</option>
+              <option value="Completed" {% if b.status=='Completed' %}selected{% endif %}>Completed</option>
+              <option value="Cancelled" {% if b.status=='Cancelled' %}selected{% endif %}>Cancelled</option>
+            </select>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty-state">You have no bookings assigned yet.</div>
+  {% endif %}
+</div>
+{% endblock %}

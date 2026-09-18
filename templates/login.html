@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Login - Fade & Blade{% endblock %}
+{% block wrap_class %}page-wrap page-wrap--auth{% endblock %}
+{% block flash_messages %}{% endblock %}
+{% block content %}
+<div class="auth-wrap">
+  <div class="auth-card">
+    <h1>ARIS2CUTS</h1>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <ul class="flash-list">
+          {% for category, message in messages %}
+            <li class="flash flash-{{ category }}">{{ message }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+
+    <form method="POST" class="stack" action="{{ url_for('auth.login') }}">
+      <div>
+        <label for="username">Username</label>
+        <input type="text" id="username" name="username" placeholder="Enter your username" required>
+      </div>
+      <div>
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" placeholder="Enter your password" required>
+      </div>
+      <button type="submit" class="btn btn-gold" style="margin-top:6px;">Log In</button>
+    </form>
+
+    <p class="auth-footer">Don't have an account? <a href="{{ url_for('auth.register') }}" style="color: var(--gold); font-weight:600;">Register as customer</a></p>
+
+  </div>
+</div>
+{% endblock %}
