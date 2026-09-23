@@ -58,6 +58,7 @@
       <div>
         <label for="time">Time</label>
         <input type="time" name="time" id="time" value="{{ form.get('time','') }}" required>
+        <p class="muted" id="timeHint" style="margin:4px 0 0; font-size:0.78rem;"></p>
       </div>
     </div>
 
@@ -70,4 +71,44 @@
     <button type="submit" class="btn btn-gold" style="margin-top:6px;">Confirm Booking</button>
   </form>
 </div>
+
+<script>
+(function () {
+  var dateInput = document.getElementById('date');
+  var timeInput = document.getElementById('time');
+  var timeHint = document.getElementById('timeHint');
+
+  function pad(n) { return String(n).padStart(2, '0'); }
+
+  function todayStr() {
+    var d = new Date();
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+  }
+
+  function nowTimeStr() {
+    var d = new Date();
+    return pad(d.getHours()) + ':' + pad(d.getMinutes());
+  }
+
+  function applyMinTime() {
+    if (dateInput.value && dateInput.value === todayStr()) {
+      var minTime = nowTimeStr();
+      timeInput.min = minTime;
+      timeHint.textContent = 'Booking for today — earliest available time is ' + minTime + '.';
+      // Clear a previously chosen time if it's now in the past.
+      if (timeInput.value && timeInput.value < minTime) {
+        timeInput.value = '';
+      }
+    } else {
+      timeInput.removeAttribute('min');
+      timeHint.textContent = '';
+    }
+  }
+
+  // Only today and future dates are selectable.
+  dateInput.min = todayStr();
+  applyMinTime();
+  dateInput.addEventListener('change', applyMinTime);
+})();
+</script>
 {% endblock %}

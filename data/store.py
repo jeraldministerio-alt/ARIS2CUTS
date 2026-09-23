@@ -123,17 +123,19 @@ class DataStore:
 
         # A demo customer
         self.add_user(Customer(self.next_user_id(), "Client one", "client1", "client123", "0917-123-4567"))
+        self.add_user(Customer(self.next_user_id(), "Client two", "client2", "client123", "0927-321-7654"))
+            
 
         # Default services — bookable versions of the 8 haircut styles in
         # the catalog below (same 8 styles, now selectable when booking).
         self.add_service(Service(self.next_service_id(), "Classic Buzz Cut", 120, 20, "Short, low-maintenance clipper cut all over."))
-        self.add_service(Service(self.next_service_id(), "Textured Quiff", 140, 25, "Short on the sides, slightly longer on top."))
-        self.add_service(Service(self.next_service_id(), "Skin Fade", 200, 45, "Precision fade with clean blend."))
-        self.add_service(Service(self.next_service_id(), "Edgar cut", 220, 40, "leveled bangs and crispier sides, styled back with tapered sides."))
-        self.add_service(Service(self.next_service_id(), "Burst Fade", 190, 35, "Short shaved sides with longer hair on the back."))
-        self.add_service(Service(self.next_service_id(), "Modern Mullet", 200, 35, "Short on side more volume at the back."))
-        self.add_service(Service(self.next_service_id(), "Slick Back", 180, 30, "Classic slicked-back style with a polished finish."))
-        self.add_service(Service(self.next_service_id(), "Textured Crop", 190, 35, "Modern crop with a textured, choppy fringe."))
+        self.add_service(Service(self.next_service_id(), "Textured Quiff", 130, 25, "Short on the sides, slightly longer on top."))
+        self.add_service(Service(self.next_service_id(), "Skin Fade", 120, 35, "Precision fade with clean blend."))
+        self.add_service(Service(self.next_service_id(), "Edgar cut", 120, 30, "leveled bangs and crispier sides, styled back with tapered sides."))
+        self.add_service(Service(self.next_service_id(), "Burst Fade", 130, 35, "Short shaved sides with longer hair on the back."))
+        self.add_service(Service(self.next_service_id(), "Modern Mullet", 115, 35, "Short on side more volume at the back."))
+        self.add_service(Service(self.next_service_id(), "Slick Back", 130, 30, "Classic slicked-back style with a polished finish."))
+        self.add_service(Service(self.next_service_id(), "Textured Crop", 120, 35, "Modern crop with a textured, choppy fringe."))
 
         # Haircut style catalog shown on the booking page (inspiration
         # gallery). Replace the .jpg files in static/images/haircuts/

@@ -92,6 +92,7 @@ def book():
             errors.append("Please select a valid service.")
         if not date_str:
             errors.append("Please choose a date.")
+            chosen_date = None
         else:
             try:
                 chosen_date = datetime.strptime(date_str, "%Y-%m-%d").date()
@@ -99,8 +100,18 @@ def book():
                     errors.append("You cannot book a date in the past.")
             except ValueError:
                 errors.append("Invalid date format.")
+                chosen_date = None
+
         if not time_str:
             errors.append("Please choose a time.")
+        elif chosen_date is not None:
+            try:
+                chosen_time = datetime.strptime(time_str, "%H:%M").time()
+                now = datetime.now()
+                if chosen_date == now.date() and chosen_time < now.time():
+                    errors.append("That time has already passed today. Please choose the current time or later.")
+            except ValueError:
+                errors.append("Invalid time format.")
         if len(note) > 300:
             errors.append("Suggestion/notes must be under 300 characters.")
 

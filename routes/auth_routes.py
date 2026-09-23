@@ -1,7 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash
 
 from data import store
-from models import Customer
 
 auth_bp = Blueprint("auth", __name__)
 
@@ -40,42 +39,6 @@ def login():
         return redirect(user.get_dashboard_url())  # polymorphism in action
 
     return render_template("login.html")
-
-
-@auth_bp.route("/register", methods=["GET", "POST"])
-def register():
-    """Only customers may self-register. Admin/Barber accounts are
-    created by the Admin from the admin dashboard."""
-    if request.method == "POST":
-        full_name = request.form.get("full_name", "").strip()
-        username = request.form.get("username", "").strip()
-        password = request.form.get("password", "")
-        confirm_password = request.form.get("confirm_password", "")
-        phone = request.form.get("phone", "").strip()
-
-        errors = []
-        if not full_name:
-            errors.append("Full name is required.")
-        if not username:
-            errors.append("Username is required.")
-        elif store.get_user_by_username(username):
-            errors.append("That username is already taken.")
-        if len(password) < 4:
-            errors.append("Password must be at least 4 characters.")
-        if password != confirm_password:
-            errors.append("Passwords do not match.")
-
-        if errors:
-            for e in errors:
-                flash(e, "error")
-            return render_template("register.html", form=request.form)
-
-        new_customer = Customer(store.next_user_id(), full_name, username, password, phone)
-        store.add_user(new_customer)
-        flash("Account created successfully! Please log in.", "success")
-        return redirect(url_for("auth.login"))
-
-    return render_template("register.html", form={})
 
 
 @auth_bp.route("/logout")

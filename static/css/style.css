@@ -97,6 +97,7 @@ h1, h2, h3, .section-title, .brand, .auth-card h1 {
   font-weight: 600;
   color: var(--nav-text);
   letter-spacing: 0.2px;
+  color: goldenrod;
 }
 .topbar .brand span { color: var(--nav-text-muted); font-weight: 400; font-size: 0.85em; }
 .topbar .brand em { font-style: normal; color: var(--gold-soft); }
@@ -192,9 +193,10 @@ h1, h2, h3, .section-title, .brand, .auth-card h1 {
   justify-content: space-between;
   padding: 20px 20px 16px;
   border-bottom: 1px solid var(--nav-border);
+  padding-left: 60px;
+  color: goldenrod;
 }
-.sidebar-header .brand { font-size: 1.15rem;
-padding-left: 50px; }
+.sidebar-header .brand { font-size: 1.15rem; }
 
 .sidebar-close {
   background: transparent;
@@ -204,8 +206,8 @@ padding-left: 50px; }
   line-height: 1;
   cursor: pointer;
   padding: 4px 8px;
-  border-radius: 6px;
-}
+  border-radius: 6px;}
+
 .sidebar-close:hover { color: var(--gold-soft); }
 
 .sidebar-nav {
