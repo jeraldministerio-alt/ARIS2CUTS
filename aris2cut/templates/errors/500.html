@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Server Error{% endblock %}
+{% block content %}
+<div class="empty-state" style="margin-top:60px;">
+  <h1 style="color: var(--text);">500</h1>
+  <p>Something went wrong on our end. Please try again.</p>
+  <a href="{{ url_for('auth.index') }}" class="btn btn-gold">Go Home</a>
+</div>
+{% endblock %}

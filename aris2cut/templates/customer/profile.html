@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}My Profile{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>My Profile</h1>
+    <p>Your account details and booking history.</p>
+  </div>
+</div>
+
+<div class="card">
+  <h2 class="section-title" style="margin-bottom:18px;">Account</h2>
+  <div class="form-grid">
+    <div>
+      <label>Full Name</label>
+      <p style="margin:0; font-size:1.05rem; color:var(--text);">{{ customer.full_name }}</p>
+    </div>
+    <div>
+      <label>Username</label>
+      <p style="margin:0; font-size:1.05rem; color:var(--text);">{{ customer.username }}</p>
+    </div>
+    {% if customer.phone %}
+    <div>
+      <label>Phone</label>
+      <p style="margin:0; font-size:1.05rem; color:var(--text);">{{ customer.phone }}</p>
+    </div>
+    {% endif %}
+    <div>
+      <label>Role</label>
+      <p style="margin:0; font-size:1.05rem; color:var(--text);">{{ customer.get_role_label() }}</p>
+    </div>
+  </div>
+</div>
+
+<div class="stat-grid">
+  <div class="stat-card"><div class="num">{{ total_count }}</div><div class="label">Total Bookings</div></div>
+  <div class="stat-card"><div class="num">{{ completed_count }}</div><div class="label">Completed</div></div>
+  <div class="stat-card"><div class="num">{{ cancelled_count }}</div><div class="label">Cancelled</div></div>
+  <div class="stat-card"><div class="num">{{ ratings_given_count }}</div><div class="label">Ratings Given</div></div>
+</div>
+
+<div class="card">
+  <h2 class="section-title">Booking History</h2>
+  {% if bookings %}
+  <table>
+    <thead>
+      <tr><th>#</th><th>Barber</th><th>Service</th><th>Date</th><th>Time</th><th>Price</th><th>Status</th><th>Rating</th></tr>
+    </thead>
+    <tbody>
+      {% for item in bookings %}
+      {% set b = item.booking %}
+      <tr>
+        <td>{{ b.booking_id }}</td>
+        <td>{{ item.barber_name }}</td>
+        <td>{{ item.service_name }}</td>
+        <td>{{ b.date_str }}</td>
+        <td>{{ b.time_str }}</td>
+        <td>₱{{ '%.2f'|format(item.service_price) }}</td>
+        <td><span class="badge badge-{{ b.status|lower }}">{{ b.status }}</span></td>
+        <td>
+          {% if b.rating %}
+            <span class="badge badge-completed">{{ b.rating }}/10</span>
+          {% else %}
+            <span class="muted">—</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty-state">
+    You have no bookings yet. <a href="{{ url_for('customer.book') }}" style="color: var(--gold); font-weight:600;">Book one now</a>.
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
