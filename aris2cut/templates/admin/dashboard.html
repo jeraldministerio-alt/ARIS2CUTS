@@ -1,0 +1,251 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Admin Dashboard</h1>
+    <p>Welcome back, {{ session.get('full_name') }}.</p>
+  </div>
+</div>
+
+<div class="stat-grid">
+  <div class="stat-card"><div class="num">{{ total_barbers }}</div><div class="label">Active Barbers</div></div>
+  <div class="stat-card"><div class="num">{{ total_customers }}</div><div class="label">Registered Customers</div></div>
+  <div class="stat-card"><div class="num">{{ total_services }}</div><div class="label">Services Offered</div></div>
+  <div class="stat-card"><div class="num">{{ total_bookings }}</div><div class="label">Total Bookings</div></div>
+  <div class="stat-card"><div class="num">{{ pending }}</div><div class="label">Pending Bookings</div></div>
+</div>
+
+<div class="card">
+  <h2 class="section-title">Quick Actions</h2>
+  <div class="row-actions">
+    <a href="{{ url_for('admin.barbers') }}" class="btn btn-primary">Manage Barbers</a>
+    <a href="{{ url_for('admin.services') }}" class="btn btn-primary">Manage Services</a>
+    <a href="{{ url_for('admin.bookings') }}" class="btn btn-gold">View All Bookings</a>
+  </div>
+</div>
+
+<div class="card">
+  <div class="page-header" style="margin-bottom:14px;">
+    <div>
+      <h2 class="section-title" style="margin:0;">Today's Haircut Demand</h2>
+      <p class="muted" id="chartUpdatedAt">Live — updates the instant a new booking comes in for today</p>
+    </div>
+    <div style="text-align:right;">
+      <div class="muted" style="font-size:0.78rem; text-transform:uppercase; letter-spacing:0.4px;">Total Revenue </div>
+      <div id="revenueTodayValue" style="font-family:'Fraunces',serif; font-size:1.6rem; font-weight:700; color:var(--gold-soft);">₱0.00</div>
+    </div>
+  </div>
+  <p class="muted" style="margin:0 0 14px;">How many times each haircut was booked today — the tallest bar is the day's most-requested style.</p>
+  <canvas id="haircutChart" style="width:100%; height:340px; display:block;"></canvas>
+</div>
+
+<script>
+/*
+ * Hand-drawn vertical bar chart using plain <canvas> — no external
+ * chart library needed, so it always renders even with no internet
+ * access. Bars are the standard, easiest-to-read way to compare a
+ * handful of discrete categories (here: the shop's haircuts).
+ */
+function readThemeColors() {
+  const styles = getComputedStyle(document.documentElement);
+  return {
+    gold: styles.getPropertyValue('--gold').trim() || '#a9822f',
+    goldSoft: styles.getPropertyValue('--gold-soft').trim() || '#cfae6b',
+    text: styles.getPropertyValue('--text').trim() || '#131314',
+    textMuted: styles.getPropertyValue('--text-muted').trim() || '#6d6d70',
+    border: styles.getPropertyValue('--border').trim() || '#e3e1d9',
+  };
+}
+
+// Wrap a label into at most 2 lines that fit within maxWidth.
+function wrapLabel(ctx, text, maxWidth) {
+  const words = text.split(' ');
+  const lines = [];
+  let current = '';
+
+  for (const word of words) {
+    const attempt = current ? current + ' ' + word : word;
+    if (ctx.measureText(attempt).width <= maxWidth || !current) {
+      current = attempt;
+    } else {
+      lines.push(current);
+      current = word;
+      if (lines.length === 1) break; // reserve the 2nd line for whatever's left
+    }
+  }
+  if (lines.length < 2) lines.push(current);
+
+  // If everything after line 1 still doesn't fit, ellipsize line 2.
+  if (lines.length > 2) {
+    let rest = lines.slice(1).join(' ');
+    while (ctx.measureText(rest + '…').width > maxWidth && rest.length > 1) {
+      rest = rest.slice(0, -1);
+    }
+    lines[1] = rest + '…';
+    lines.length = 2;
+  } else if (ctx.measureText(lines[1] || '').width > maxWidth) {
+    let rest = lines[1];
+    while (ctx.measureText(rest + '…').width > maxWidth && rest.length > 1) {
+      rest = rest.slice(0, -1);
+    }
+    lines[1] = rest + '…';
+  }
+
+  return lines.filter(Boolean);
+}
+
+class HaircutBarChart {
+  constructor(canvas) {
+    this.canvas = canvas;
+    this.ctx = canvas.getContext('2d');
+    this.haircuts = []; // [{name, count}]
+    window.addEventListener('resize', () => this.render());
+  }
+
+  setData(haircuts) {
+    this.haircuts = haircuts;
+    this.render();
+  }
+
+  _setupCanvasSize() {
+    const dpr = window.devicePixelRatio || 1;
+    const rect = this.canvas.getBoundingClientRect();
+    this.canvas.width = Math.max(rect.width, 300) * dpr;
+    this.canvas.height = Math.max(rect.height, 200) * dpr;
+    this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return { width: rect.width, height: rect.height };
+  }
+
+  render() {
+    const { width, height } = this._setupCanvasSize();
+    const ctx = this.ctx;
+    const colors = readThemeColors();
+    ctx.clearRect(0, 0, width, height);
+
+    if (!this.haircuts.length) {
+      ctx.fillStyle = colors.textMuted;
+      ctx.font = '13px Inter, Segoe UI, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('No haircuts to show yet.', width / 2, height / 2);
+      return;
+    }
+
+    const n = this.haircuts.length;
+    const padding = { top: 26, right: 12, bottom: 48, left: 34 };
+    const chartW = Math.max(40, width - padding.left - padding.right);
+    const chartH = Math.max(40, height - padding.top - padding.bottom);
+    const slotW = chartW / n;
+    const barW = Math.max(16, Math.min(52, slotW * 0.6));
+
+    const maxCount = Math.max(1, ...this.haircuts.map((h) => h.count));
+    const gridLines = Math.min(4, maxCount);
+
+    // Horizontal gridlines + left axis count labels
+    ctx.strokeStyle = colors.border;
+    ctx.fillStyle = colors.textMuted;
+    ctx.font = '11px Segoe UI, sans-serif';
+    ctx.lineWidth = 1;
+    for (let g = 0; g <= gridLines; g++) {
+      const y = padding.top + chartH - (chartH / gridLines) * g;
+      ctx.beginPath();
+      ctx.moveTo(padding.left, y);
+      ctx.lineTo(padding.left + chartW, y);
+      ctx.stroke();
+
+      const label = Math.round((maxCount / gridLines) * g);
+      ctx.textAlign = 'right';
+      ctx.fillText(label, padding.left - 8, y + 4);
+    }
+
+    const baseline = padding.top + chartH;
+
+    this.haircuts.forEach((h, i) => {
+      const slotX = padding.left + slotW * i;
+      const barX = slotX + (slotW - barW) / 2;
+      const barH = (h.count / maxCount) * chartH;
+      const barY = baseline - barH;
+      const isTopBooked = h.count === maxCount && h.count > 0;
+      const radius = Math.min(6, barW / 2);
+
+      // bar (rounded top corners), or a thin flat tick when count is 0
+      ctx.fillStyle = isTopBooked ? colors.gold : colors.goldSoft;
+      if (h.count > 0) {
+        ctx.beginPath();
+        ctx.moveTo(barX, baseline);
+        ctx.lineTo(barX, barY + radius);
+        ctx.arcTo(barX, barY, barX + radius, barY, radius);
+        ctx.lineTo(barX + barW - radius, barY);
+        ctx.arcTo(barX + barW, barY, barX + barW, barY + radius, radius);
+        ctx.lineTo(barX + barW, baseline);
+        ctx.closePath();
+        ctx.fill();
+
+        // count label above the bar
+        ctx.fillStyle = colors.text;
+        ctx.textAlign = 'center';
+        ctx.font = '12px Segoe UI, sans-serif';
+        ctx.fillText(String(h.count), barX + barW / 2, barY - 8);
+      } else {
+        ctx.fillStyle = colors.border;
+        ctx.fillRect(barX, baseline - 2, barW, 2);
+      }
+
+      // wrapped category label under the bar
+      ctx.fillStyle = colors.textMuted;
+      ctx.textAlign = 'center';
+      ctx.font = '11px Segoe UI, sans-serif';
+      const lines = wrapLabel(ctx, h.name, slotW - 6);
+      lines.forEach((line, li) => {
+        ctx.fillText(line, slotX + slotW / 2, baseline + 16 + li * 13);
+      });
+    });
+  }
+}
+
+function formatPeso(amount) {
+  return '₱' + Number(amount).toFixed(2);
+}
+
+const initialPoint = {{ initial_point | tojson }};
+const chart = new HaircutBarChart(document.getElementById('haircutChart'));
+chart.setData(initialPoint.haircuts);
+document.getElementById('revenueTodayValue').textContent = formatPeso(initialPoint.revenue_today);
+
+const liveStatsUrl = "{{ url_for('admin.live_stats') }}";
+const updatedAtEl = document.getElementById('chartUpdatedAt');
+const revenueEl = document.getElementById('revenueTodayValue');
+let lastBookingsToday = initialPoint.bookings_today;
+
+async function pollLiveStats() {
+  try {
+    const res = await fetch(liveStatsUrl, { cache: 'no-store' });
+    if (!res.ok) return;
+    const point = await res.json();
+
+    const changed = point.bookings_today !== lastBookingsToday;
+    if (changed) {
+      chart.setData(point.haircuts);
+      revenueEl.textContent = formatPeso(point.revenue_today);
+      lastBookingsToday = point.bookings_today;
+    }
+
+    if (updatedAtEl) {
+      updatedAtEl.textContent = "Last checked " + point.time +
+        (changed ? " — new booking detected!" : "");
+    }
+  } catch (err) {
+    console.error('Could not refresh live stats:', err);
+  }
+}
+
+// Check every 3 seconds so a booking made "right now" shows up on
+// the chart almost immediately, plus re-check whenever the tab
+// regains focus.
+setInterval(pollLiveStats, 3000);
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) pollLiveStats();
+});
+document.addEventListener('themechange', () => chart.render());
+</script>
+{% endblock %}
