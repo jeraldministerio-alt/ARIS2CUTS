@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}My Profile - Barber{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>My Profile</h1>
+    <p>Your account details, performance, and customer ratings.</p>
+  </div>
+</div>
+
+<div class="card">
+  <h2 class="section-title" style="margin-bottom:18px;">Account</h2>
+  <div class="form-grid">
+    <div>
+      <label>Full Name</label>
+      <p style="margin:0; font-size:1.05rem; color:var(--text);">{{ barber.full_name }}</p>
+    </div>
+    <div>
+      <label>Username</label>
+      <p style="margin:0; font-size:1.05rem; color:var(--text);">{{ barber.username }}</p>
+    </div>
+    <div>
+      <label>Specialty</label>
+      <p style="margin:0; font-size:1.05rem; color:var(--text);">{{ barber.specialty }}</p>
+    </div>
+    <div>
+      <label>Role</label>
+      <p style="margin:0; font-size:1.05rem; color:var(--text);">{{ barber.get_role_label() }}</p>
+    </div>
+  </div>
+</div>
+
+<div class="stat-grid">
+  <div class="stat-card"><div class="num">{{ total_count }}</div><div class="label">Total Bookings</div></div>
+  <div class="stat-card"><div class="num">{{ completed_count }}</div><div class="label">Completed</div></div>
+  <div class="stat-card"><div class="num">{{ cancelled_count }}</div><div class="label">Cancelled</div></div>
+  <div class="stat-card">
+    <div class="num">{% if average_rating %}{{ average_rating }}/10{% else %}—{% endif %}</div>
+    <div class="label">Avg Rating{% if rating_count %} ({{ rating_count }} review{{ 's' if rating_count != 1 else '' }}){% endif %}</div>
+  </div>
+</div>
+
+<div class="card">
+  <h2 class="section-title">Recent Ratings</h2>
+  {% if reviews %}
+  <table>
+    <thead>
+      <tr><th>#</th><th>Customer</th><th>Service</th><th>Date</th><th>Rating</th></tr>
+    </thead>
+    <tbody>
+      {% for item in reviews %}
+      {% set b = item.booking %}
+      <tr>
+        <td>{{ b.booking_id }}</td>
+        <td>{{ item.customer_name }}</td>
+        <td>{{ item.service_name }}</td>
+        <td>{{ b.date_str }}</td>
+        <td><span class="badge badge-completed">{{ b.rating }}/10</span></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty-state">No customer ratings yet. They'll appear here after completed appointments are rated.</div>
+  {% endif %}
+</div>
+{% endblock %}

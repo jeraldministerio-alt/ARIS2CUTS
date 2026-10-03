@@ -57,8 +57,10 @@
       </div>
       <div>
         <label for="time">Time</label>
-        <input type="time" name="time" id="time" value="{{ form.get('time','') }}" required>
-        <p class="muted" id="timeHint" style="margin:4px 0 0; font-size:0.78rem;"></p>
+        <input type="time" name="time" id="time" value="{{ form.get('time','') }}"
+               min="{{ booking_open }}" max="{{ booking_close }}" required>
+        <p class="muted" style="margin:4px 0 0; font-size:0.78rem;">Open for booking {{ booking_open_label }} – {{ booking_close_label }}.</p>
+        <p class="muted" id="timeHint" style="margin:2px 0 0; font-size:0.78rem;"></p>
       </div>
     </div>
 
@@ -90,18 +92,30 @@
     return pad(d.getHours()) + ':' + pad(d.getMinutes());
   }
 
+  var OPEN = '{{ booking_open }}';    // earliest bookable time (HH:MM)
+  var CLOSE = '{{ booking_close }}';  // latest bookable time (HH:MM)
+
   function applyMinTime() {
+    var minTime = OPEN;
+    timeHint.textContent = '';
+
     if (dateInput.value && dateInput.value === todayStr()) {
-      var minTime = nowTimeStr();
-      timeInput.min = minTime;
-      timeHint.textContent = 'Booking for today — earliest available time is ' + minTime + '.';
-      // Clear a previously chosen time if it's now in the past.
-      if (timeInput.value && timeInput.value < minTime) {
-        timeInput.value = '';
+      var now = nowTimeStr();
+      if (now > CLOSE) {
+        timeHint.textContent = 'Booking hours are over for today — please pick another date.';
+        minTime = now; // nothing valid is left today
+      } else if (now > OPEN) {
+        minTime = now;
+        timeHint.textContent = 'Booking for today — earliest available time is ' + minTime + '.';
       }
-    } else {
-      timeInput.removeAttribute('min');
-      timeHint.textContent = '';
+    }
+
+    timeInput.min = minTime;
+    timeInput.max = CLOSE;
+
+    // Clear a previously chosen time if it's no longer allowed.
+    if (timeInput.value && (timeInput.value < minTime || timeInput.value > CLOSE)) {
+      timeInput.value = '';
     }
   }
 

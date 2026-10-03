@@ -46,6 +46,44 @@ def dashboard():
     )
 
 
+@barber_bp.route("/profile")
+@role_required("barber")
+def profile():
+    barber = store.get_user_by_id(session["user_id"])
+    my_bookings = store.get_bookings_for_barber(barber.user_id)
+
+    total_count = len(my_bookings)
+    completed_count = len([b for b in my_bookings if b.status == "Completed"])
+    cancelled_count = len([b for b in my_bookings if b.status == "Cancelled"])
+
+    ratings = [b.rating for b in my_bookings if b.rating is not None]
+    average_rating = round(sum(ratings) / len(ratings), 1) if ratings else None
+
+    # Most recent rated appointments, newest first.
+    reviews = []
+    for b in sorted(my_bookings, key=lambda x: (x.date_str, x.time_str), reverse=True):
+        if b.rating is None:
+            continue
+        customer = store.get_user_by_id(b.customer_id)
+        service = store.get_service_by_id(b.service_id)
+        reviews.append({
+            "booking": b,
+            "customer_name": customer.full_name if customer else "Unknown",
+            "service_name": service.name if service else "Unknown",
+        })
+
+    return render_template(
+        "barber/profile.html",
+        barber=barber,
+        total_count=total_count,
+        completed_count=completed_count,
+        cancelled_count=cancelled_count,
+        average_rating=average_rating,
+        rating_count=len(ratings),
+        reviews=reviews[:10],
+    )
+
+
 @barber_bp.route("/bookings/<int:booking_id>/update", methods=["POST"])
 @role_required("barber")
 def update_booking(booking_id):

@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, time
 
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash
 
@@ -7,6 +7,21 @@ from models import Booking
 from utils.decorators import role_required
 
 customer_bp = Blueprint("customer", __name__, url_prefix="/customer")
+
+# Shop booking hours: appointments can only be booked from 8:00 AM to 8:00 PM.
+# Change these two values to adjust the allowed window everywhere (server
+# validation, the time picker limits, and the hint shown on the form).
+BOOKING_OPEN = time(8, 0)
+BOOKING_CLOSE = time(20, 0)
+
+
+def _booking_hours_context():
+    return {
+        "booking_open": BOOKING_OPEN.strftime("%H:%M"),
+        "booking_close": BOOKING_CLOSE.strftime("%H:%M"),
+        "booking_open_label": BOOKING_OPEN.strftime("%I:%M %p").lstrip("0"),
+        "booking_close_label": BOOKING_CLOSE.strftime("%I:%M %p").lstrip("0"),
+    }
 
 
 @customer_bp.route("/dashboard")
@@ -108,7 +123,13 @@ def book():
             try:
                 chosen_time = datetime.strptime(time_str, "%H:%M").time()
                 now = datetime.now()
-                if chosen_date == now.date() and chosen_time < now.time():
+                if not (BOOKING_OPEN <= chosen_time <= BOOKING_CLOSE):
+                    hours = _booking_hours_context()
+                    errors.append(
+                        f"Bookings are only available between {hours['booking_open_label']} "
+                        f"and {hours['booking_close_label']}."
+                    )
+                elif chosen_date == now.date() and chosen_time < now.time():
                     errors.append("That time has already passed today. Please choose the current time or later.")
             except ValueError:
                 errors.append("Invalid time format.")
@@ -122,7 +143,8 @@ def book():
             for e in errors:
                 flash(e, "error")
             return render_template("customer/book.html", barbers=barbers, services=services,
-                                   haircut_styles=haircut_styles, form=request.form)
+                                   haircut_styles=haircut_styles, form=request.form,
+                                   **_booking_hours_context())
 
         booking = Booking(
             store.next_booking_id(),
@@ -138,7 +160,8 @@ def book():
         return redirect(url_for("customer.dashboard"))
 
     return render_template("customer/book.html", barbers=barbers, services=services,
-                           haircut_styles=haircut_styles, form={})
+                           haircut_styles=haircut_styles, form={},
+                           **_booking_hours_context())
 
 
 @customer_bp.route("/bookings/<int:booking_id>/cancel", methods=["POST"])

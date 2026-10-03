@@ -49,6 +49,7 @@
         <a href="{{ url_for('admin.bookings') }}">Bookings</a>
       {% elif session.get('role') == 'barber' %}
         <a href="{{ url_for('barber.dashboard') }}">My Bookings</a>
+        <a href="{{ url_for('barber.profile') }}">Profile</a>
       {% elif session.get('role') == 'customer' %}
         <a href="{{ url_for('customer.dashboard') }}">My Appointments</a>
         <a href="{{ url_for('customer.book') }}">Book Now</a>
@@ -115,7 +116,7 @@
       openBtn.addEventListener('click', function () {
         sidebar.classList.contains('is-open') ? closeSidebar() : openSidebar();
       });
-      closeBtn.addEventListener('click', closeSidebar);
+      if (closeBtn) closeBtn.addEventListener('click', closeSidebar);
       overlay.addEventListener('click', closeSidebar);
       document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape') closeSidebar();
