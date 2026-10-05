@@ -93,9 +93,32 @@ def profile():
     )
 
 
+def _open_booking_info(customer_id):
+    """Details of the client's unfinished booking (blocks booking again), or None."""
+    booking = store.get_open_booking_for_customer(customer_id)
+    if not booking:
+        return None
+    service = store.get_service_by_id(booking.service_id)
+    barber = store.get_user_by_id(booking.barber_id)
+    return {
+        "booking": booking,
+        "service_name": service.name if service else "Unknown",
+        "barber_name": barber.full_name if barber else "Unknown",
+    }
+
+
 @customer_bp.route("/book", methods=["GET", "POST"])
 @role_required("customer")
 def book():
+    open_booking = _open_booking_info(session["user_id"])
+    if open_booking:
+        if request.method == "POST":
+            flash("You already have an appointment that isn't completed yet. "
+                  "Please wait until it is completed (or cancel it) before booking again.", "error")
+            return redirect(url_for("customer.book"))
+        return render_template("customer/book.html", barbers=[], services=[], form={},
+                               open_booking=open_booking, **_booking_hours_context())
+
     barbers = [b for b in store.get_users_by_role("barber") if b.is_active]
     services = store.get_active_services()
 
@@ -163,7 +186,7 @@ def book():
             for e in errors:
                 flash(e, "error")
             return render_template("customer/book.html", barbers=barbers, services=services,
-                                   form=request.form,
+                                   form=request.form, open_booking=None,
                                    **_booking_hours_context())
 
         booking = Booking(
@@ -180,7 +203,7 @@ def book():
         return redirect(url_for("customer.dashboard"))
 
     return render_template("customer/book.html", barbers=barbers, services=services,
-                           form={},
+                           form={}, open_booking=None,
                            **_booking_hours_context())
 
 

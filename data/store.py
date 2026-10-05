@@ -82,6 +82,14 @@ class DataStore:
     def get_bookings_for_customer(self, customer_id):
         return [b for b in self.bookings if b.customer_id == int(customer_id)]
 
+    def get_open_booking_for_customer(self, customer_id):
+        """The customer's earliest booking that is not finished yet
+        (Pending or Confirmed). Completed and Cancelled ones don't count."""
+        open_bookings = [b for b in self.bookings
+                         if b.customer_id == int(customer_id) and b.status in ("Pending", "Confirmed")]
+        open_bookings.sort(key=lambda b: (b.date_str, b.time_str))
+        return open_bookings[0] if open_bookings else None
+
     def get_bookings_for_barber(self, barber_id):
         return [b for b in self.bookings if b.barber_id == int(barber_id)]
 

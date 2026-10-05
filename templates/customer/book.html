@@ -1,6 +1,35 @@
 {% extends "base.html" %}
 {% block title %}Book Appointment{% endblock %}
 {% block content %}
+{% if open_booking %}
+<div class="page-header">
+  <div>
+    <h1>Book an Appointment</h1>
+    <p>You can book again once your current appointment is completed.</p>
+  </div>
+</div>
+
+<div class="card" style="max-width:600px;">
+  <h2 class="section-title">You already have an appointment</h2>
+  <p style="margin:0 0 6px;">
+    <strong>{{ open_booking.service_name }}</strong> with {{ open_booking.barber_name }}<br>
+    {{ open_booking.booking.date_str }} at {{ open_booking.booking.time_str }} —
+    status: <strong>{{ open_booking.booking.status }}</strong>
+  </p>
+  <p class="muted" style="margin:0 0 14px;">
+    New bookings are unlocked after this one is marked Completed. You may also cancel it from your appointments page.
+  </p>
+  <a href="{{ url_for('customer.dashboard') }}" class="btn btn-gold">View My Appointments</a>
+</div>
+
+<div class="card location-card">
+  <h2 class="section-title">Where We're Located</h2>
+  <p>
+    <span aria-hidden="true">📍</span>
+    We are located at Purok Pomelo Maranding Lala Lanao Del Norte
+  </p>
+</div>
+{% else %}
 <div class="page-header">
   <div>
     <h1>Book an Appointment</h1>
@@ -199,4 +228,5 @@
     We are located at Purok Pomelo Maranding Lala Lanao Del Norte
   </p>
 </div>
+{% endif %}
 {% endblock %}
