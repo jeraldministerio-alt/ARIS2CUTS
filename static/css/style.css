@@ -579,3 +579,25 @@ textarea:focus { outline: none; border-color: var(--gold); }
   .topbar { padding-left: 64px; }
   .topbar .brand span { display: none; }
 }
+
+/* ---- Location container (booking page footer) ---- */
+.location-card { margin-top: 24px; text-align: center; }
+.location-card p { margin: 0; font-size: 1.05rem; color: var(--text); line-height: 1.6; }
+
+/* ---- Admin services & catalog manager ---- */
+.service-admin-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 18px; }
+.service-admin-item { border: 1px solid var(--border); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 8px; background: var(--surface); }
+.service-admin-item.is-inactive { opacity: 0.6; }
+.service-admin-item img, .service-admin-item .photo-placeholder { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 8px; background: var(--surface-alt); }
+.service-admin-item .photo-placeholder { display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: 0.85rem; }
+.service-admin-item input[type="text"], .service-admin-item input[type="number"], .service-admin-item input[type="file"], .service-admin-item textarea { width: 100%; }
+.service-admin-item label { font-size: 0.78rem; color: var(--text-muted); margin-bottom: -4px; }
+.service-admin-item .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+/* ---- Clickable catalog on the booking page ---- */
+button.catalog-item { padding: 0; width: 100%; font: inherit; color: inherit; cursor: pointer; text-align: center; }
+button.catalog-item:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.catalog-item.is-selected { border-color: var(--gold); box-shadow: 0 0 0 2px var(--gold); }
+.catalog-meta { padding: 0 8px 10px; font-size: 0.78rem; color: var(--text-muted); }
+.catalog-item .catalog-name { border-top: 1px solid var(--border); padding-bottom: 2px; }
+.catalog-photo .no-photo { color: var(--text-muted); font-size: 0.8rem; }

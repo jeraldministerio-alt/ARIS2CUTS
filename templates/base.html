@@ -45,7 +45,8 @@
       {% if session.get('role') == 'admin' %}
         <a href="{{ url_for('admin.dashboard') }}">Dashboard</a>
         <a href="{{ url_for('admin.barbers') }}">Barbers</a>
-        <a href="{{ url_for('admin.services') }}">Services</a>
+        <a href="{{ url_for('admin.services') }}">Services &amp; Catalog</a>
+        <a href="{{ url_for('admin.clients') }}">Clients</a>
         <a href="{{ url_for('admin.bookings') }}">Bookings</a>
       {% elif session.get('role') == 'barber' %}
         <a href="{{ url_for('barber.dashboard') }}">My Bookings</a>

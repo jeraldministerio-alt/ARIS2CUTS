@@ -1,6 +1,6 @@
 from datetime import datetime, time
 
-from flask import Blueprint, render_template, request, redirect, url_for, session, flash
+from flask import Blueprint, render_template, request, redirect, url_for, session, flash, jsonify
 
 from data import store
 from models import Booking
@@ -13,6 +13,17 @@ customer_bp = Blueprint("customer", __name__, url_prefix="/customer")
 # validation, the time picker limits, and the hint shown on the form).
 BOOKING_OPEN = time(8, 0)
 BOOKING_CLOSE = time(20, 0)
+
+
+# Double-booking rule. False = an appointment only blocks the SAME barber's
+# time. Set to True to block the time for the whole shop (one chair).
+BLOCK_ACROSS_ALL_BARBERS = False
+
+
+def _fmt_minutes(total):
+    h, m = divmod(total, 60)
+    suffix = "AM" if h < 12 else "PM"
+    return f"{(h % 12) or 12}:{m:02d} {suffix}"
 
 
 def _booking_hours_context():
@@ -87,7 +98,6 @@ def profile():
 def book():
     barbers = [b for b in store.get_users_by_role("barber") if b.is_active]
     services = store.get_active_services()
-    haircut_styles = store.get_all_haircut_styles()
 
     if request.method == "POST":
         barber_id = request.form.get("barber_id")
@@ -136,14 +146,24 @@ def book():
         if len(note) > 300:
             errors.append("Suggestion/notes must be under 300 characters.")
 
-        if not errors and store.is_slot_taken(barber_id, date_str, time_str):
-            errors.append("That barber is already booked at this date/time. Please pick another slot.")
+        if not errors:
+            conflict = store.find_conflict(
+                int(barber_id), date_str, time_str, service.duration_minutes,
+                all_barbers=BLOCK_ACROSS_ALL_BARBERS,
+            )
+            if conflict:
+                start = store._to_minutes(conflict.time_str)
+                end = start + store._booking_minutes(conflict)
+                errors.append(
+                    f"Sorry, that time is already booked by another client "
+                    f"({_fmt_minutes(start)} - {_fmt_minutes(end)}). Please pick another time."
+                )
 
         if errors:
             for e in errors:
                 flash(e, "error")
             return render_template("customer/book.html", barbers=barbers, services=services,
-                                   haircut_styles=haircut_styles, form=request.form,
+                                   form=request.form,
                                    **_booking_hours_context())
 
         booking = Booking(
@@ -160,8 +180,32 @@ def book():
         return redirect(url_for("customer.dashboard"))
 
     return render_template("customer/book.html", barbers=barbers, services=services,
-                           haircut_styles=haircut_styles, form={},
+                           form={},
                            **_booking_hours_context())
+
+
+@customer_bp.route("/api/booked-slots")
+@role_required("customer")
+def booked_slots():
+    """Times already taken on a date, so the booking form can warn up front."""
+    date_str = request.args.get("date", "")
+    barber_id = request.args.get("barber_id") or None
+    try:
+        datetime.strptime(date_str, "%Y-%m-%d")
+        if barber_id is not None:
+            barber_id = int(barber_id)
+    except ValueError:
+        return jsonify({"slots": []})
+
+    scope = None if BLOCK_ACROSS_ALL_BARBERS else barber_id
+    if scope is None and not BLOCK_ACROSS_ALL_BARBERS:
+        return jsonify({"slots": []})  # no barber chosen yet
+
+    slots = [
+        {"start": start, "end": end, "label": f"{_fmt_minutes(start)} - {_fmt_minutes(end)}"}
+        for start, end, _ in sorted(store.get_booked_ranges(date_str, scope), key=lambda r: r[0])
+    ]
+    return jsonify({"slots": slots})
 
 
 @customer_bp.route("/bookings/<int:booking_id>/cancel", methods=["POST"])

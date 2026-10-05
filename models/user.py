@@ -70,7 +70,7 @@ class Admin(User):
         return "Administrator"
 
     def get_permissions(self):
-        return ["manage_barbers", "manage_services", "manage_bookings", "view_reports"]
+        return ["manage_barbers", "manage_services", "manage_clients", "manage_bookings", "view_reports"]
 
 
 class Barber(User):

@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Manage Clients{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Manage Clients</h1>
+    <p>Add, update, deactivate, or remove client accounts.</p>
+  </div>
+</div>
+
+<div class="card">
+  <h2 class="section-title">Add New Client</h2>
+  <form method="POST" action="{{ url_for('admin.clients') }}" class="form-grid">
+    <div><label>Full Name</label><input type="text" name="full_name" required></div>
+    <div><label>Username</label><input type="text" name="username" required></div>
+    <div><label>Password</label><input type="password" name="password" minlength="4" required></div>
+    <div><label>Phone</label><input type="text" name="phone" placeholder="Optional"></div>
+    <div style="align-self:end;"><button type="submit" class="btn btn-gold">Add Client</button></div>
+  </form>
+</div>
+
+<div class="card">
+  <h2 class="section-title">Current Clients</h2>
+  {% if clients %}
+  <table>
+    <thead>
+      <tr><th>Name</th><th>Username</th><th>Phone</th><th>New Password</th><th>Bookings</th><th>Status</th><th>Actions</th></tr>
+    </thead>
+    <tbody>
+      {% for c in clients %}
+      <form method="POST" action="{{ url_for('admin.update_client', user_id=c.user_id) }}" style="display: contents;">
+        <tr>
+          <td><input type="text" name="full_name" value="{{ c.full_name }}" style="width:160px;"></td>
+          <td>{{ c.username }}</td>
+          <td><input type="text" name="phone" value="{{ c.phone }}" style="width:130px;"></td>
+          <td><input type="password" name="password" placeholder="Leave blank to keep" style="width:140px;"></td>
+          <td>{{ booking_counts[c.user_id] }}</td>
+          <td><label class="checkbox-row"><input type="checkbox" name="is_active" {% if c.is_active %}checked{% endif %}> Active</label></td>
+          <td>
+            <div class="row-actions">
+              <button type="submit" class="btn btn-primary btn-sm">Save</button>
+              <button type="submit" formaction="{{ url_for('admin.delete_client', user_id=c.user_id) }}"
+                      class="btn btn-danger btn-sm"
+                      onclick="return confirm('Delete this client and all of their bookings?');">Delete</button>
+            </div>
+          </td>
+        </tr>
+      </form>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty-state">No clients yet.</div>
+  {% endif %}
+</div>
+{% endblock %}

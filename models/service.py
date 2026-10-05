@@ -2,15 +2,16 @@
 
 
 class Service:
-    def __init__(self, service_id, name, price, duration_minutes, description=""):
+    def __init__(self, service_id, name, price, duration_minutes, description="", image_filename=""):
         self.service_id = service_id
         self.name = name
         self.price = float(price)
         self.duration_minutes = int(duration_minutes)
         self.description = description
+        self.image_filename = image_filename  # photo shown in the booking catalog
         self.is_active = True
 
-    def update(self, name=None, price=None, duration_minutes=None, description=None):
+    def update(self, name=None, price=None, duration_minutes=None, description=None, image_filename=None):
         if name:
             self.name = name
         if price is not None:
@@ -19,6 +20,8 @@ class Service:
             self.duration_minutes = int(duration_minutes)
         if description is not None:
             self.description = description
+        if image_filename:
+            self.image_filename = image_filename
 
     def to_dict(self):
         return {
@@ -27,6 +30,7 @@ class Service:
             "price": self.price,
             "duration_minutes": self.duration_minutes,
             "description": self.description,
+            "image_filename": self.image_filename,
             "is_active": self.is_active,
         }
 

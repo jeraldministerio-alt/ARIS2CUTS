@@ -9,21 +9,31 @@
 </div>
 
 <div class="card">
-  <h2 class="section-title">Haircut Style Catalog</h2>
-  <p class="muted" style="margin-top:-8px; margin-bottom:16px;">Browse a few popular styles for inspiration before you book.</p>
+  <h2 class="section-title">Haircut Catalog</h2>
+  <p class="muted" style="margin-top:-8px; margin-bottom:16px;">Tap a haircut to select it as your service below.</p>
+  {% if services %}
   <div class="catalog-grid">
-    {% for style in haircut_styles %}
-    <div class="catalog-item">
+    {% for service in services %}
+    <button type="button" class="catalog-item" data-service-id="{{ service.service_id }}"
+            aria-pressed="false" title="Select {{ service.name }}">
       <div class="catalog-photo">
-        <img src="{{ url_for('static', filename='images/haircuts/' ~ style.image_filename) }}" alt="{{ style.name }}">
+        {% if service.image_filename %}
+        <img src="{{ url_for('static', filename='images/haircuts/' ~ service.image_filename) }}" alt="{{ service.name }}">
+        {% else %}
+        <span class="no-photo">No picture</span>
+        {% endif %}
       </div>
-      <div class="catalog-name">{{ style.name }}</div>
-    </div>
+      <div class="catalog-name">{{ service.name }}</div>
+      <div class="catalog-meta">₱{{ '%.2f'|format(service.price) }} · {{ service.duration_minutes }} min</div>
+    </button>
     {% endfor %}
   </div>
+  {% else %}
+  <div class="empty-state">No services available right now.</div>
+  {% endif %}
 </div>
 
-<div class="card" style="max-width:600px;">
+<div class="card" id="appointmentDetails" style="max-width:600px;">
   <h2 class="section-title">Appointment Details</h2>
   <form method="POST" action="{{ url_for('customer.book') }}" class="stack">
     <div>
@@ -61,6 +71,7 @@
                min="{{ booking_open }}" max="{{ booking_close }}" required>
         <p class="muted" style="margin:4px 0 0; font-size:0.78rem;">Open for booking {{ booking_open_label }} – {{ booking_close_label }}.</p>
         <p class="muted" id="timeHint" style="margin:2px 0 0; font-size:0.78rem;"></p>
+        <p id="bookedHint" style="margin:6px 0 0; font-size:0.82rem; color:#b3261e; display:none;"></p>
       </div>
     </div>
 
@@ -123,6 +134,69 @@
   dateInput.min = todayStr();
   applyMinTime();
   dateInput.addEventListener('change', applyMinTime);
+
+  // ---- Clicking a catalog picture selects that service ----
+  var serviceSelect = document.getElementById('service_id');
+  var catalogItems = document.querySelectorAll('.catalog-item[data-service-id]');
+
+  function highlightCatalog() {
+    catalogItems.forEach(function (item) {
+      var on = item.getAttribute('data-service-id') === serviceSelect.value;
+      item.classList.toggle('is-selected', on);
+      item.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+  }
+
+  catalogItems.forEach(function (item) {
+    item.addEventListener('click', function () {
+      serviceSelect.value = item.getAttribute('data-service-id');
+      highlightCatalog();
+      document.getElementById('appointmentDetails').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+  serviceSelect.addEventListener('change', highlightCatalog);
+  highlightCatalog();
+
+  // ---- Show times already booked by other clients ----
+  var barberSelect = document.getElementById('barber_id');
+  var bookedHint = document.getElementById('bookedHint');
+  var slots = [];
+
+  function toMin(t) { var p = t.split(':'); return parseInt(p[0], 10) * 60 + parseInt(p[1], 10); }
+
+  function loadSlots() {
+    if (!dateInput.value || !barberSelect.value) { slots = []; showBooked(); return; }
+    fetch('{{ url_for("customer.booked_slots") }}?date=' + encodeURIComponent(dateInput.value) +
+          '&barber_id=' + encodeURIComponent(barberSelect.value))
+      .then(function (r) { return r.json(); })
+      .then(function (d) { slots = d.slots || []; showBooked(); })
+      .catch(function () { slots = []; });
+  }
+
+  function showBooked() {
+    if (!slots.length) { bookedHint.style.display = 'none'; return; }
+    var text = 'Already booked: ' + slots.map(function (s) { return s.label; }).join(', ') + '.';
+    if (timeInput.value) {
+      var t = toMin(timeInput.value);
+      var hit = slots.some(function (s) { return t >= s.start && t < s.end; });
+      if (hit) text += ' The time you picked is taken — please choose another.';
+    }
+    bookedHint.textContent = text;
+    bookedHint.style.display = 'block';
+  }
+
+  dateInput.addEventListener('change', loadSlots);
+  barberSelect.addEventListener('change', loadSlots);
+  timeInput.addEventListener('input', showBooked);
+  loadSlots();
 })();
 </script>
+
+<div class="card location-card">
+  <h2 class="section-title">Where We're Located</h2>
+  <p>
+    <span aria-hidden="true">📍</span>
+    We are located at Purok Pomelo Maranding Lala Lanao Del Norte
+  </p>
+</div>
 {% endblock %}

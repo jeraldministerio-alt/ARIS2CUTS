@@ -1,9 +1,12 @@
+import os
+import uuid
 from datetime import datetime
 
-from flask import Blueprint, render_template, request, redirect, url_for, session, flash
+from flask import Blueprint, render_template, request, redirect, url_for, session, flash, current_app
+from werkzeug.utils import secure_filename
 
 from data import store
-from models import Barber, Service
+from models import Barber, Customer, Service
 from utils.decorators import role_required
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
@@ -123,7 +126,42 @@ def delete_barber(user_id):
     return redirect(url_for("admin.barbers"))
 
 
-# ---------------- SERVICE MANAGEMENT (CRUD) ----------------
+# ---------------- SERVICES & CATALOG (one CRUD page) ----------------
+# Each service = photo + name + price + duration + description. The same
+# records feed the clickable catalog on the client booking page.
+ALLOWED_IMAGE_EXTS = {"jpg", "jpeg", "png", "webp", "gif"}
+
+
+def _image_dir():
+    return os.path.join(current_app.static_folder, "images", "haircuts")
+
+
+def _save_service_image(file_storage):
+    """Save an uploaded photo. Returns filename, None (nothing uploaded) or False (bad type)."""
+    if not file_storage or not file_storage.filename:
+        return None
+    name = file_storage.filename
+    ext = name.rsplit(".", 1)[-1].lower() if "." in name else ""
+    if ext not in ALLOWED_IMAGE_EXTS:
+        return False
+    base = secure_filename(name.rsplit(".", 1)[0]) or "service"
+    filename = f"upload_{uuid.uuid4().hex[:8]}_{base}.{ext}"
+    os.makedirs(_image_dir(), exist_ok=True)
+    file_storage.save(os.path.join(_image_dir(), filename))
+    return filename
+
+
+def _remove_uploaded_image(filename):
+    """Only delete files created by this page (upload_ prefix) that nothing else uses."""
+    if not filename or not filename.startswith("upload_"):
+        return
+    if any(sv.image_filename == filename for sv in store.services):
+        return
+    path = os.path.join(_image_dir(), filename)
+    if os.path.isfile(path):
+        os.remove(path)
+
+
 @admin_bp.route("/services", methods=["GET", "POST"])
 @role_required("admin")
 def services():
@@ -149,11 +187,16 @@ def services():
         except ValueError:
             errors.append("Duration must be a whole number of minutes.")
 
+        image = _save_service_image(request.files.get("image"))
+        if image is False:
+            errors.append("Picture must be a JPG, PNG, WEBP or GIF file.")
+
         if errors:
             for e in errors:
                 flash(e, "error")
         else:
-            store.add_service(Service(store.next_service_id(), name, price, duration, description))
+            store.add_service(Service(store.next_service_id(), name, price, duration,
+                                      description, image or ""))
             flash("Service added.", "success")
         return redirect(url_for("admin.services"))
 
@@ -173,23 +216,104 @@ def update_service(service_id):
         price = float(request.form.get("price"))
         duration = int(request.form.get("duration"))
         description = request.form.get("description", "").strip()
-        service.update(name=name, price=price, duration_minutes=duration, description=description)
-        service.is_active = request.form.get("is_active") == "on"
-        flash("Service updated.", "success")
+        if not name or price <= 0 or duration <= 0:
+            raise ValueError
     except (ValueError, TypeError):
-        flash("Invalid price or duration.", "error")
+        flash("Please enter a name, a price above 0 and a duration above 0.", "error")
+        return redirect(url_for("admin.services"))
 
+    new_image = _save_service_image(request.files.get("image"))
+    if new_image is False:
+        flash("Picture must be a JPG, PNG, WEBP or GIF file.", "error")
+        return redirect(url_for("admin.services"))
+
+    old_image = service.image_filename
+    service.update(name=name, price=price, duration_minutes=duration,
+                   description=description, image_filename=new_image)
+    service.is_active = request.form.get("is_active") == "on"
+    if new_image:
+        _remove_uploaded_image(old_image)
+    flash("Service updated.", "success")
     return redirect(url_for("admin.services"))
 
 
 @admin_bp.route("/services/<int:service_id>/delete", methods=["POST"])
 @role_required("admin")
 def delete_service(service_id):
-    if store.delete_service(service_id):
+    service = store.delete_service(service_id)
+    if service:
+        _remove_uploaded_image(service.image_filename)
         flash("Service deleted.", "success")
     else:
         flash("Service not found.", "error")
     return redirect(url_for("admin.services"))
+
+
+# ---------------- CLIENT MANAGEMENT (CRUD) ----------------
+@admin_bp.route("/clients", methods=["GET", "POST"])
+@role_required("admin")
+def clients():
+    if request.method == "POST":
+        full_name = request.form.get("full_name", "").strip()
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "")
+        phone = request.form.get("phone", "").strip()
+
+        if not full_name or not username or len(password) < 4:
+            flash("Please fill all required fields; password must be 4+ characters.", "error")
+        elif store.get_user_by_username(username):
+            flash("That username is already taken.", "error")
+        else:
+            store.add_user(Customer(store.next_user_id(), full_name, username, password, phone))
+            flash("Client added successfully.", "success")
+        return redirect(url_for("admin.clients"))
+
+    clients_list = store.get_users_by_role("customer")
+    booking_counts = {c.user_id: len(store.get_bookings_for_customer(c.user_id)) for c in clients_list}
+    return render_template("admin/clients.html", clients=clients_list, booking_counts=booking_counts)
+
+
+@admin_bp.route("/clients/<int:user_id>/update", methods=["POST"])
+@role_required("admin")
+def update_client(user_id):
+    client = store.get_user_by_id(user_id)
+    if not client or client.role != "customer":
+        flash("Client not found.", "error")
+        return redirect(url_for("admin.clients"))
+
+    full_name = request.form.get("full_name", "").strip()
+    phone = request.form.get("phone", "").strip()
+    new_password = request.form.get("password", "")
+
+    if not full_name:
+        flash("Full name cannot be empty.", "error")
+        return redirect(url_for("admin.clients"))
+
+    if new_password:
+        try:
+            client.set_password(new_password)
+        except ValueError as e:
+            flash(str(e), "error")
+            return redirect(url_for("admin.clients"))
+
+    client.full_name = full_name
+    client.phone = phone
+    client.is_active = request.form.get("is_active") == "on"
+    flash("Client updated.", "success")
+    return redirect(url_for("admin.clients"))
+
+
+@admin_bp.route("/clients/<int:user_id>/delete", methods=["POST"])
+@role_required("admin")
+def delete_client(user_id):
+    client = store.get_user_by_id(user_id)
+    if client and client.role == "customer":
+        store.delete_bookings_for_customer(user_id)
+        store.delete_user(user_id)
+        flash("Client and their bookings removed.", "success")
+    else:
+        flash("Client not found.", "error")
+    return redirect(url_for("admin.clients"))
 
 
 # ---------------- BOOKING OVERSIGHT ----------------
