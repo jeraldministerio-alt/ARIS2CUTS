@@ -9,9 +9,8 @@
     (function () {
       try {
         var saved = localStorage.getItem('theme');
-        if (saved === 'dark' || saved === 'light') {
-          document.documentElement.setAttribute('data-theme', saved);
-        }
+        document.documentElement.setAttribute('data-theme',
+          (saved === 'dark' || saved === 'light') ? saved : 'dark');
       } catch (e) {}
     })();
   </script>

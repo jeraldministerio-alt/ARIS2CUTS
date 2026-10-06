@@ -1,35 +1,63 @@
 {% extends "base.html" %}
-{% block title %}Login - ARIS2CUTS {% endblock %}
+{% block title %}Login - ARIS2CUTS{% endblock %}
 {% block wrap_class %}page-wrap page-wrap--auth{% endblock %}
 {% block flash_messages %}{% endblock %}
 {% block content %}
 <div class="auth-wrap">
-  <div class="auth-card">
-    <h1>ARIS2CUTS</h1>
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        <ul class="flash-list">
-          {% for category, message in messages %}
-            <li class="flash flash-{{ category }}">{{ message }}</li>
-          {% endfor %}
-        </ul>
-      {% endif %}
-    {% endwith %}
+  <!-- animated background -->
+  <div class="auth-orb o1"></div><div class="auth-orb o2"></div><div class="auth-orb o3"></div>
+  <div class="sparkles" aria-hidden="true">
+  </div>
 
-    <form method="POST" class="stack" action="{{ url_for('auth.login') }}">
-      <div>
-        <label for="username">Username</label>
-        <input type="text" id="username" name="username" placeholder="Enter your username" required>
-      </div>
-      <div>
-        <label for="password">Password</label>
-        <input type="password" id="password" name="password" placeholder="Enter your password" required>
-      </div>
-      <button type="submit" class="btn btn-gold" style="margin-top:6px;">Log In</button>
-    </form>
+  <button type="button" id="authTheme" class="auth-theme-btn" aria-label="Toggle light/dark mode" title="Toggle light / dark">
+    <span class="icon-moon">🌙</span><span class="icon-sun">☀️</span>
+  </button>
 
-    <p class="auth-footer">Don't have an account yet? <a href="#" id="registerLink" style="color: var(--gold); font-weight:600;">Tap here to register</a></p>
+  <div class="auth-stage">
+    <div class="auth-logo" aria-hidden="true">
+      <svg viewBox="0 0 64 64" fill="none" stroke="#d4af37" stroke-width="3.5" stroke-linecap="round">
+        <g class="blade-top"><path d="M32 32 L54 10"/><circle cx="14" cy="46" r="7"/><path d="M32 32 L18 41"/></g>
+        <g class="blade-bot"><path d="M32 32 L54 54"/><circle cx="14" cy="18" r="7"/><path d="M32 32 L18 23"/></g>
+        <circle cx="32" cy="32" r="2.5" fill="#d4af37"/>
+      </svg>
+    </div>
+    <h1 class="auth-brand">ARIS2CUTS</h1>
+    <p class="auth-tagline">Premium Barbershop</p>
 
+    <div class="auth-card">
+      <h2 class="auth-welcome">Welcome back</h2>
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <ul class="flash-list">
+            {% for category, message in messages %}
+              <li class="flash flash-{{ category }}">{{ message }}</li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+      {% endwith %}
+
+      <form method="POST" class="stack" action="{{ url_for('auth.login') }}">
+        <div class="field">
+          <label for="username">Username</label>
+          <div class="input-icon">
+            <span class="ico" aria-hidden="true">👤</span>
+            <input type="text" id="username" name="username" placeholder="Enter your username" autocomplete="username" required>
+          </div>
+        </div>
+        <div class="field">
+          <label for="password">Password</label>
+          <div class="input-icon">
+            <span class="ico" aria-hidden="true">🔒</span>
+            <input type="password" id="password" name="password" placeholder="Enter your password" autocomplete="current-password" required>
+            <button type="button" class="pw-toggle" id="pwToggle" aria-label="Show password">👁</button>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-gold btn-login">Log In</button>
+      </form>
+
+      <p class="auth-footer">Don't have an account yet? <a href="#" id="registerLink" style="color: var(--gold); font-weight:600;">Tap here to register</a></p>
+      <div class="pole" aria-hidden="true"></div>
+    </div>
   </div>
 </div>
 
@@ -37,6 +65,21 @@
   document.getElementById('registerLink').addEventListener('click', function (e) {
     e.preventDefault();
     alert("Can't create account.");
+  });
+
+  document.getElementById('pwToggle').addEventListener('click', function () {
+    var pw = document.getElementById('password');
+    var show = pw.type === 'password';
+    pw.type = show ? 'text' : 'password';
+    this.textContent = show ? '🙈' : '👁';
+    this.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+  });
+
+  document.getElementById('authTheme').addEventListener('click', function () {
+    var root = document.documentElement;
+    var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('theme', next); } catch (e) {}
   });
 </script>
 {% endblock %}
