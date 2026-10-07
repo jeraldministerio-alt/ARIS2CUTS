@@ -845,3 +845,97 @@ tr:hover td { background: var(--nav-hover); }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; }
 }
+
+
+/* =========================================================
+   UPDATE: login hover glow, static logo, readable catalog,
+   edge-to-edge photos, and the booking "buy" overlay
+   ========================================================= */
+
+/* ---- Login card: no glowing border by default, glow on hover ---- */
+.auth-wrap .auth-card {
+  border: 1px solid var(--border);
+  overflow: hidden;
+  box-shadow: 0 18px 44px rgba(0,0,0,0.22);
+  transition: box-shadow 0.3s ease, border-color 0.3s ease;
+}
+.auth-wrap .auth-card::before,
+.auth-wrap .auth-card::after { content: none; display: none; animation: none; }
+.auth-wrap .auth-card:hover {
+  border-color: var(--gold-soft);
+  box-shadow: 0 18px 44px rgba(0,0,0,0.22), 0 0 0 1px var(--gold-soft), 0 0 34px 6px rgba(212,175,55,0.45);
+}
+
+/* ---- Scissors logo: no animation ---- */
+.auth-logo { animation: none; }
+.blade-top, .blade-bot { animation: none; }
+
+/* ---- Catalog (booking page): readable text, edge-to-edge photos ---- */
+.catalog-item { background: var(--surface); color: var(--text); }
+.catalog-photo { aspect-ratio: 3 / 4; padding: 0; background: #000; }
+.catalog-photo img { width: 100%; height: 100%; max-width: none; max-height: none; object-fit: cover; object-position: center top; }
+.catalog-item .catalog-name { color: var(--text); font-size: 0.95rem; font-weight: 700; padding: 10px 8px 2px; }
+.catalog-item .catalog-meta { color: #7a5a0a; font-weight: 700; font-size: 0.82rem; }
+[data-theme="dark"] .catalog-item .catalog-meta { color: var(--gold-soft); }
+.catalog-photo .no-photo { color: #d8d0b8; }
+
+/* ---- Admin Services & Catalog: readable labels, uncropped photos ---- */
+.service-admin-item img, .service-admin-item .photo-placeholder {
+  aspect-ratio: 3 / 4; object-fit: cover; object-position: center top; background: #000; border-radius: 8px;
+}
+.service-admin-item .photo-placeholder { color: #d8d0b8; }
+.service-admin-item label { font-size: 0.82rem; font-weight: 700; color: var(--text); margin: 4px 0 -2px; }
+.service-admin-item .two-col label { margin-top: 0; }
+.service-admin-item .checkbox-row { color: var(--text); font-weight: 600; }
+.service-admin-item input, .service-admin-item textarea { color: var(--text); }
+.service-admin-item input[type="file"] { font-size: 0.8rem; color: var(--text); }
+.card .form-grid > div > label { color: var(--text); font-weight: 700; }
+
+/* ---- Booking overlay ---- */
+body.no-scroll { overflow: hidden; }
+.buy-overlay {
+  position: fixed; inset: 0; z-index: 1000; display: none;
+  align-items: center; justify-content: center; padding: 20px;
+  background: rgba(0,0,0,0.65); backdrop-filter: blur(3px);
+}
+.buy-overlay.is-open { display: flex; animation: fadeUp 0.25s ease both; }
+.buy-modal {
+  position: relative; width: 100%; max-width: 640px; max-height: calc(100vh - 40px);
+  display: flex; flex-direction: column; overflow: hidden;
+  background: var(--surface); color: var(--text);
+  border: 1px solid var(--gold-soft); border-radius: 16px;
+  box-shadow: 0 24px 70px rgba(0,0,0,0.5);
+}
+.buy-form { display: flex; flex-direction: column; min-height: 0; flex: 1; }
+.buy-scroll { overflow-y: auto; padding: 22px 22px 8px; flex: 1; }
+.buy-close {
+  position: absolute; top: 10px; right: 12px; z-index: 3; width: 34px; height: 34px;
+  border-radius: 50%; border: 1px solid var(--border); background: var(--surface);
+  color: var(--text); font-size: 1.4rem; line-height: 1; cursor: pointer;
+}
+.buy-close:hover { border-color: var(--gold-soft); color: var(--gold); }
+.buy-hero { display: flex; gap: 18px; margin-bottom: 18px; padding-right: 30px; }
+.buy-photo { flex: 0 0 150px; aspect-ratio: 3 / 4; border-radius: 10px; overflow: hidden; background: #000; display: flex; align-items: center; justify-content: center; }
+.buy-photo img { width: 100%; height: 100%; object-fit: cover; object-position: center top; display: block; }
+.buy-photo .no-photo { color: #d8d0b8; font-size: 0.8rem; }
+.buy-info h2 { margin: 0 0 6px; font-size: 1.35rem; color: var(--text); }
+.buy-price { font-size: 1.5rem; font-weight: 700; color: #7a5a0a; font-family: 'Fraunces', serif; }
+[data-theme="dark"] .buy-price { color: var(--gold-soft); }
+.buy-duration { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 10px; }
+.buy-desc { margin: 0; font-size: 0.95rem; line-height: 1.55; color: var(--text); }
+.buy-fields { display: flex; flex-direction: column; gap: 14px; }
+.buy-fields label { color: var(--text); font-weight: 700; }
+.buy-hint { margin: -6px 0 0; font-size: 0.78rem; color: var(--text-muted); }
+.buy-hint:empty { display: none; }
+.buy-hint--error { color: #b3261e; font-size: 0.82rem; }
+[data-theme="dark"] .buy-hint--error { color: #f08a80; }
+.buy-footer { padding: 14px 22px 20px; border-top: 1px solid var(--border); background: var(--surface); }
+.buy-confirm { width: 100%; height: 48px; font-size: 0.95rem; letter-spacing: 1px; }
+@media (max-width: 520px) {
+  .buy-hero { flex-direction: column; padding-right: 0; }
+  .buy-photo { flex: none; width: 60%; align-self: center; }
+  .buy-overlay { padding: 10px; }
+  .buy-modal { max-height: calc(100vh - 20px); }
+}
+.service-admin-item .two-col label { margin: 0 0 4px; line-height: 1.3; }
+.service-admin-item label { margin-bottom: 2px; }

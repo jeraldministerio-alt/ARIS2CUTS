@@ -39,12 +39,15 @@
 
 <div class="card">
   <h2 class="section-title">Haircut Catalog</h2>
-  <p class="muted" style="margin-top:-8px; margin-bottom:16px;">Tap a haircut to select it as your service below.</p>
+  <p class="muted" style="margin-top:-8px; margin-bottom:16px;">Tap a haircut to see its details and book it.</p>
   {% if services %}
   <div class="catalog-grid">
     {% for service in services %}
     <button type="button" class="catalog-item" data-service-id="{{ service.service_id }}"
-            aria-pressed="false" title="Select {{ service.name }}">
+            data-name="{{ service.name }}" data-price="{{ '%.2f'|format(service.price) }}"
+            data-duration="{{ service.duration_minutes }}" data-desc="{{ service.description }}"
+            data-image="{% if service.image_filename %}{{ url_for('static', filename='images/haircuts/' ~ service.image_filename) }}{% endif %}"
+            aria-pressed="false" title="Book {{ service.name }}">
       <div class="catalog-photo">
         {% if service.image_filename %}
         <img src="{{ url_for('static', filename='images/haircuts/' ~ service.image_filename) }}" alt="{{ service.name }}">
@@ -62,56 +65,64 @@
   {% endif %}
 </div>
 
-<div class="card" id="appointmentDetails" style="max-width:600px;">
-  <h2 class="section-title">Appointment Details</h2>
-  <form method="POST" action="{{ url_for('customer.book') }}" class="stack">
-    <div>
-      <label for="barber_id">Barber</label>
-      <select name="barber_id" id="barber_id" required>
-        <option value="">-- Select a barber --</option>
-        {% for barber in barbers %}
-        <option value="{{ barber.user_id }}" {% if form.get('barber_id')|string == barber.user_id|string %}selected{% endif %}>
-          {{ barber.full_name }} ({{ barber.specialty }})
-        </option>
-        {% endfor %}
-      </select>
-    </div>
+<div class="buy-overlay" id="buyOverlay" aria-hidden="true">
+  <div class="buy-modal" role="dialog" aria-modal="true" aria-labelledby="buyName">
+    <button type="button" class="buy-close" id="buyClose" aria-label="Close">&times;</button>
+    <form method="POST" action="{{ url_for('customer.book') }}" class="buy-form">
+      <input type="hidden" name="service_id" id="service_id" value="{{ form.get('service_id','') }}">
 
-    <div>
-      <label for="service_id">Service</label>
-      <select name="service_id" id="service_id" required>
-        <option value="">-- Select a service --</option>
-        {% for service in services %}
-        <option value="{{ service.service_id }}" {% if form.get('service_id')|string == service.service_id|string %}selected{% endif %}>
-          {{ service.name }} — ₱{{ '%.2f'|format(service.price) }} ({{ service.duration_minutes }} min)
-        </option>
-        {% endfor %}
-      </select>
-    </div>
+      <div class="buy-scroll">
+        <div class="buy-hero">
+          <div class="buy-photo"><img id="buyImg" src="" alt=""><span class="no-photo" id="buyNoImg" hidden>No picture</span></div>
+          <div class="buy-info">
+            <h2 id="buyName">Haircut</h2>
+            <div class="buy-price" id="buyPrice"></div>
+            <div class="buy-duration" id="buyDuration"></div>
+            <p class="buy-desc" id="buyDesc"></p>
+          </div>
+        </div>
 
-    <div class="form-grid">
-      <div>
-        <label for="date">Date</label>
-        <input type="date" name="date" id="date" value="{{ form.get('date','') }}" required>
+        <div class="buy-fields">
+          <div>
+            <label for="barber_id">Select a barber</label>
+            <select name="barber_id" id="barber_id" required>
+              <option value="">-- Select a barber --</option>
+              {% for barber in barbers %}
+              <option value="{{ barber.user_id }}" {% if form.get('barber_id')|string == barber.user_id|string %}selected{% endif %}>
+                {{ barber.full_name }} ({{ barber.specialty }})
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="form-grid">
+            <div>
+              <label for="date">Select date</label>
+              <input type="date" name="date" id="date" value="{{ form.get('date','') }}" required>
+            </div>
+            <div>
+              <label for="time">Select time</label>
+              <input type="time" name="time" id="time" value="{{ form.get('time','') }}"
+                     min="{{ booking_open }}" max="{{ booking_close }}" required>
+            </div>
+          </div>
+          <p class="buy-hint">Open for booking {{ booking_open_label }} – {{ booking_close_label }}.</p>
+          <p class="buy-hint" id="timeHint"></p>
+          <p class="buy-hint buy-hint--error" id="bookedHint" style="display:none;"></p>
+
+          <div>
+            <label for="note">Suggestion <span class="muted">(optional — your barber will see this)</span></label>
+            <textarea name="note" id="note" rows="3" maxlength="300"
+                      placeholder="e.g. Keep the sides short, go easy on the top, I have sensitive skin, etc.">{{ form.get('note','') }}</textarea>
+          </div>
+        </div>
       </div>
-      <div>
-        <label for="time">Time</label>
-        <input type="time" name="time" id="time" value="{{ form.get('time','') }}"
-               min="{{ booking_open }}" max="{{ booking_close }}" required>
-        <p class="muted" style="margin:4px 0 0; font-size:0.78rem;">Open for booking {{ booking_open_label }} – {{ booking_close_label }}.</p>
-        <p class="muted" id="timeHint" style="margin:2px 0 0; font-size:0.78rem;"></p>
-        <p id="bookedHint" style="margin:6px 0 0; font-size:0.82rem; color:#b3261e; display:none;"></p>
+
+      <div class="buy-footer">
+        <button type="submit" class="btn btn-gold buy-confirm">Confirm Booking</button>
       </div>
-    </div>
-
-    <div>
-      <label for="note">Suggestion / Special Request <span class="muted">(optional — your barber will see this)</span></label>
-      <textarea name="note" id="note" rows="3" maxlength="300"
-                placeholder="e.g. Keep the sides short, go easy on the top, I have sensitive skin, etc.">{{ form.get('note','') }}</textarea>
-    </div>
-
-    <button type="submit" class="btn btn-gold" style="margin-top:6px;">Confirm Booking</button>
-  </form>
+    </form>
+  </div>
 </div>
 
 <script>
@@ -164,26 +175,49 @@
   applyMinTime();
   dateInput.addEventListener('change', applyMinTime);
 
-  // ---- Clicking a catalog picture selects that service ----
-  var serviceSelect = document.getElementById('service_id');
+  // ---- Clicking a catalog picture opens the booking overlay ----
+  var serviceInput = document.getElementById('service_id');
   var catalogItems = document.querySelectorAll('.catalog-item[data-service-id]');
+  var overlay = document.getElementById('buyOverlay');
+  var buyImg = document.getElementById('buyImg');
+  var buyNoImg = document.getElementById('buyNoImg');
 
   function highlightCatalog() {
     catalogItems.forEach(function (item) {
-      var on = item.getAttribute('data-service-id') === serviceSelect.value;
+      var on = item.getAttribute('data-service-id') === serviceInput.value;
       item.classList.toggle('is-selected', on);
       item.setAttribute('aria-pressed', on ? 'true' : 'false');
     });
   }
 
+  function openOverlay(item) {
+    serviceInput.value = item.getAttribute('data-service-id');
+    document.getElementById('buyName').textContent = item.getAttribute('data-name');
+    document.getElementById('buyPrice').textContent = '\u20B1' + item.getAttribute('data-price');
+    document.getElementById('buyDuration').textContent = item.getAttribute('data-duration') + ' min';
+    document.getElementById('buyDesc').textContent = item.getAttribute('data-desc') || 'No description available.';
+    var img = item.getAttribute('data-image');
+    buyImg.hidden = !img; buyNoImg.hidden = !!img;
+    if (img) { buyImg.src = img; buyImg.alt = item.getAttribute('data-name'); }
+    highlightCatalog();
+    overlay.classList.add('is-open');
+    overlay.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('no-scroll');
+    loadSlots();
+  }
+
+  function closeOverlay() {
+    overlay.classList.remove('is-open');
+    overlay.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('no-scroll');
+  }
+
   catalogItems.forEach(function (item) {
-    item.addEventListener('click', function () {
-      serviceSelect.value = item.getAttribute('data-service-id');
-      highlightCatalog();
-      document.getElementById('appointmentDetails').scrollIntoView({ behavior: 'smooth', block: 'start' });
-    });
+    item.addEventListener('click', function () { openOverlay(item); });
   });
-  serviceSelect.addEventListener('change', highlightCatalog);
+  document.getElementById('buyClose').addEventListener('click', closeOverlay);
+  overlay.addEventListener('click', function (e) { if (e.target === overlay) closeOverlay(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeOverlay(); });
   highlightCatalog();
 
   // ---- Show times already booked by other clients ----
@@ -218,6 +252,13 @@
   barberSelect.addEventListener('change', loadSlots);
   timeInput.addEventListener('input', showBooked);
   loadSlots();
+
+  // Re-open the overlay if the server sent the form back with errors.
+  if (serviceInput.value) {
+    catalogItems.forEach(function (item) {
+      if (item.getAttribute('data-service-id') === serviceInput.value) openOverlay(item);
+    });
+  }
 })();
 </script>
 

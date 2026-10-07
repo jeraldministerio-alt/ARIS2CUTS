@@ -7,6 +7,7 @@
   <!-- animated background -->
   <div class="auth-orb o1"></div><div class="auth-orb o2"></div><div class="auth-orb o3"></div>
   <div class="sparkles" aria-hidden="true">
+    {% for i in range(20) %}<span style="--x:{{ (i * 37 + 5) % 100 }}%; --s:{{ 3 + (i * 5) % 6 }}px; --d:{{ 7 + (i * 7) % 9 }}s; --delay:-{{ (i * 3) % 13 }}s;"></span>{% endfor %}
   </div>
 
   <button type="button" id="authTheme" class="auth-theme-btn" aria-label="Toggle light/dark mode" title="Toggle light / dark">
@@ -16,8 +17,8 @@
   <div class="auth-stage">
     <div class="auth-logo" aria-hidden="true">
       <svg viewBox="0 0 64 64" fill="none" stroke="#d4af37" stroke-width="3.5" stroke-linecap="round">
-        <g class="blade-top"><path d="M32 32 L54 10"/><circle cx="14" cy="46" r="7"/><path d="M32 32 L18 41"/></g>
-        <g class="blade-bot"><path d="M32 32 L54 54"/><circle cx="14" cy="18" r="7"/><path d="M32 32 L18 23"/></g>
+        <g><path d="M32 32 L54 10"/><circle cx="14" cy="46" r="7"/><path d="M32 32 L18 41"/></g>
+        <g><path d="M32 32 L54 54"/><circle cx="14" cy="18" r="7"/><path d="M32 32 L18 23"/></g>
         <circle cx="32" cy="32" r="2.5" fill="#d4af37"/>
       </svg>
     </div>
