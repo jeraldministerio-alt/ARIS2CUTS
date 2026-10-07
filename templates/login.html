@@ -7,7 +7,6 @@
   <!-- animated background -->
   <div class="auth-orb o1"></div><div class="auth-orb o2"></div><div class="auth-orb o3"></div>
   <div class="sparkles" aria-hidden="true">
-    {% for i in range(20) %}<span style="--x:{{ (i * 37 + 5) % 100 }}%; --s:{{ 3 + (i * 5) % 6 }}px; --d:{{ 7 + (i * 7) % 9 }}s; --delay:-{{ (i * 3) % 13 }}s;"></span>{% endfor %}
   </div>
 
   <button type="button" id="authTheme" class="auth-theme-btn" aria-label="Toggle light/dark mode" title="Toggle light / dark">
@@ -57,7 +56,6 @@
       </form>
 
       <p class="auth-footer">Don't have an account yet? <a href="#" id="registerLink" style="color: var(--gold); font-weight:600;">Tap here to register</a></p>
-      <div class="pole" aria-hidden="true"></div>
     </div>
   </div>
 </div>
