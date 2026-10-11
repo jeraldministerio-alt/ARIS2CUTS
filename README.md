@@ -65,22 +65,7 @@ Visit **http://localhost:5000**
 | Role     | Username | Password  |
 |----------|----------|-----------|
 | Admin    | admin    | admin123  |
-| Barber   | miguel   | barber123 |
-| Barber   | carlo    | barber123 |
-| Customer | juan     | cust123   |
+| Barberone| barber1  | barber123 |
+| Barbertwo| barber2  | barber123 |
+| Client.  | client1  | client123 |
 
-New customers can also self-register from the login page.
-
-## Deployment Notes
-
-For online deployment (e.g. Render, Railway, PythonAnywhere):
-1. Push this project to a GitHub repository.
-2. Set the start command to: `gunicorn app:app` (add `gunicorn` to `requirements.txt`).
-3. Because storage is in-memory, data resets on every redeploy/restart — this is expected given the "Python Lists only, no database" requirement.
-4. Change `app.secret_key` in `app.py` to a real secret (e.g. via an environment variable) before going live.
-
-## Notes on Design Decisions
-
-- Passwords are hashed with `werkzeug.security` even though the project only requires basic validation — this keeps the "encapsulation" of `User._password_hash` meaningful and safe to demo publicly.
-- Double-booking is prevented: a barber cannot be booked for the same date & time twice while a booking is active (not cancelled).
-- Admin cannot directly edit/delete a Customer account in this version (only Admin/Barber management screens are provided) — this can be extended if needed.
