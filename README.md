@@ -1,10 +1,10 @@
-# Fade & Blade — Barbershop Booking System
+ARIS2CUTS — Barbershop Booking System
 
 A multi-user Flask web app for managing a barbershop's bookings, built with
 Object-Oriented Python. Storage is **in-memory (Python lists only)** — no
 database — per the project requirements. Data resets whenever the server restarts.
 
-## Features / Requirements Covered
+ Features / Requirements Covered
 
 - **3 User Roles**: Admin, Barber, Customer — each with their own dashboard and permissions.
 - **Login & Role-Based Access**: Session-based auth; `role_required()` decorator guards routes.
@@ -21,7 +21,7 @@ database — per the project requirements. Data resets whenever the server resta
 - **Flask Web App**: Blueprints for `auth`, `admin`, `barber`, `customer`; Jinja2 templates + plain CSS.
 - **Validation & Error Handling**: required-field checks, price/duration type checks, duplicate-username checks, double-booking prevention, custom 404/500 pages, flash messages.
 
-## Project Structure
+ Project Structure
 
 ```
 barbershop/
@@ -49,7 +49,7 @@ barbershop/
 └── static/css/style.css
 ```
 
-## Running Locally
+ Running Locally
 
 ```bash
 python -m venv venv
@@ -60,7 +60,7 @@ python app.py
 
 Visit **http://localhost:5000**
 
-## Demo Accounts (seeded automatically)
+ Demo Accounts (seeded automatically)
 
 | Role     | Username | Password  |
 |----------|----------|-----------|
